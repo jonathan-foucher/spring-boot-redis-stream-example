@@ -1,6 +1,7 @@
 package com.jonathanfoucher.redisstreamexample.services;
 
 import com.jonathanfoucher.redisstreamexample.data.JobDto;
+import com.jonathanfoucher.redisstreamexample.errors.JobAlreadyQueuedException;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +26,10 @@ public class JobQueueProducer {
     private String streamKey;
 
     public RecordId produce(JobDto jobMessage) {
+        if (getAllQueuedJobIds().contains(jobMessage.getId())) {
+            throw new JobAlreadyQueuedException(jobMessage.getId());
+        }
+
         ObjectRecord<String, JobDto> record = StreamRecords.newRecord()
                 .ofObject(jobMessage)
                 .withStreamKey(streamKey);
