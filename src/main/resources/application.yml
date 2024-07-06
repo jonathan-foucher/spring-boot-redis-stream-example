@@ -1,0 +1,18 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /redis-stream-example
+
+spring:
+  application:
+    name: redis-stream-example
+  jackson:
+    property-naming-strategy: com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy
+  data:
+    redis:
+      port: 6379
+      host: localhost
+
+redis-stream-example:
+  stream-key: job_queue
+  consumer-group-name: job_queue_consumer
