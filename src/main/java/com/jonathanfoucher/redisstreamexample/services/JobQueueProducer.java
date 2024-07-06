@@ -5,11 +5,12 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.connection.stream.ObjectRecord;
-import org.springframework.data.redis.connection.stream.RecordId;
-import org.springframework.data.redis.connection.stream.StreamRecords;
+import org.springframework.data.redis.connection.stream.Record;
+import org.springframework.data.redis.connection.stream.*;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 import static java.util.Objects.isNull;
 
@@ -38,5 +39,14 @@ public class JobQueueProducer {
 
         log.info("job {} was added to the queue with id {}", jobMessage, recordId);
         return recordId;
+    }
+
+    public List<Long> getAllQueuedJobIds() {
+        return redisTemplate.opsForStream()
+                .read(JobDto.class, StreamOffset.fromStart(streamKey))
+                .stream()
+                .map(Record::getValue)
+                .map(JobDto::getId)
+                .toList();
     }
 }
