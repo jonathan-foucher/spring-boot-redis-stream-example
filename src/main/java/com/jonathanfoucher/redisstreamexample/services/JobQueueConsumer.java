@@ -27,8 +27,6 @@ public class JobQueueConsumer implements StreamListener<String, ObjectRecord<Str
         processJob(jobMessage);
 
         redisTemplate.opsForStream()
-                .acknowledge(streamKey, record);
-        redisTemplate.opsForStream()
                 .delete(record);
     }
 

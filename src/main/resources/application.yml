@@ -15,4 +15,3 @@ spring:
 
 redis-stream-example:
   stream-key: job_queue
-  consumer-group-name: job_queue_consumer
