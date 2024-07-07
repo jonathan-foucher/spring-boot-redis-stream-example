@@ -1,9 +1,8 @@
 package com.jonathanfoucher.redisstreamexample.controllers;
 
 import com.jonathanfoucher.redisstreamexample.data.JobDto;
-import com.jonathanfoucher.redisstreamexample.services.JobQueueProducer;
+import com.jonathanfoucher.redisstreamexample.services.JobProducer;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.redis.connection.stream.RecordId;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -12,15 +11,15 @@ import java.util.List;
 @RequestMapping("/v1/jobs")
 @RequiredArgsConstructor
 public class JobController {
-    private final JobQueueProducer jobQueueProducer;
+    private final JobProducer jobProducer;
 
     @PostMapping("/start")
-    public RecordId startJob(@RequestBody JobDto job) {
-        return jobQueueProducer.produce(job);
+    public String startJob(@RequestBody JobDto job) {
+        return jobProducer.produce(job);
     }
 
     @GetMapping("/queued")
-    public List<Long> queuedJobs() {
-        return jobQueueProducer.getAllQueuedJobIds();
+    public List<Long> getQueuedJobIds() {
+        return jobProducer.getQueuedJobsIds();
     }
 }

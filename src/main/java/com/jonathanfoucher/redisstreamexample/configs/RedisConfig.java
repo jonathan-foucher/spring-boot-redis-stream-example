@@ -1,7 +1,6 @@
 package com.jonathanfoucher.redisstreamexample.configs;
 
 import com.jonathanfoucher.redisstreamexample.data.JobDto;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,14 +15,11 @@ import java.time.Duration;
 
 @Configuration
 public class RedisConfig {
-    @Autowired
-    private StreamListener<String, ObjectRecord<String, JobDto>> streamListener;
-
     @Value("${redis-stream-example.stream-key}")
     private String streamKey;
 
     @Bean
-    public Subscription subscription(RedisConnectionFactory connectionFactory) {
+    public Subscription subscription(RedisConnectionFactory connectionFactory, StreamListener<String, ObjectRecord<String, JobDto>> streamListener) {
         StreamMessageListenerContainer.StreamMessageListenerContainerOptions<String, ObjectRecord<String, JobDto>> options = StreamMessageListenerContainer
                 .StreamMessageListenerContainerOptions
                 .builder()

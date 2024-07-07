@@ -17,7 +17,7 @@ import static java.util.Objects.isNull;
 
 @Service
 @RequiredArgsConstructor
-public class JobQueueProducer {
+public class JobProducer {
     private final RedisTemplate<String, String> redisTemplate;
 
     private final Logger log = LoggerFactory.getLogger(this.getClass());
@@ -25,17 +25,17 @@ public class JobQueueProducer {
     @Value("${redis-stream-example.stream-key}")
     private String streamKey;
 
-    public RecordId produce(JobDto jobMessage) {
-        if (getAllQueuedJobIds().contains(jobMessage.getId())) {
+    public String produce(JobDto jobMessage) {
+        if (getQueuedJobsIds().contains(jobMessage.getId())) {
             throw new JobAlreadyQueuedException(jobMessage.getId());
         }
 
-        ObjectRecord<String, JobDto> record = StreamRecords.newRecord()
+        ObjectRecord<String, JobDto> jobRecord = StreamRecords.newRecord()
                 .ofObject(jobMessage)
                 .withStreamKey(streamKey);
 
         RecordId recordId = redisTemplate.opsForStream()
-                .add(record);
+                .add(jobRecord);
 
         if (isNull(recordId)) {
             log.error("error producing message for job {}", jobMessage);
@@ -43,10 +43,10 @@ public class JobQueueProducer {
         }
 
         log.info("job {} was added to the queue with id {}", jobMessage, recordId);
-        return recordId;
+        return recordId.getValue();
     }
 
-    public List<Long> getAllQueuedJobIds() {
+    public List<Long> getQueuedJobsIds() {
         return redisTemplate.opsForStream()
                 .read(JobDto.class, StreamOffset.fromStart(streamKey))
                 .stream()
