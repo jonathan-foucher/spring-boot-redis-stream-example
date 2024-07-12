@@ -26,8 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.*;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -46,6 +45,7 @@ class JobControllerTest {
 
     private static final String START_JOB_PATH = "/v1/jobs/start";
     private static final String QUEUED_JOBS_PATH = "/v1/jobs/queued";
+    private static final String QUEUED_JOB_PATH = "/v1/jobs/{job_id}/queued";
     private static final Long JOB_ID = 15L;
     private static final String JOB_NAME = "some job name";
     private static final String MESSAGE_ID = Timestamp.valueOf(LocalDateTime.now()) + "-0";
@@ -106,7 +106,7 @@ class JobControllerTest {
     }
 
     @Test
-    void getQueuedJobIds() throws Exception {
+    void getQueuedJobsIds() throws Exception {
         // GIVEN
         List<Long> queuedJobIds = new ArrayList<>();
         queuedJobIds.add(JOB_ID);
@@ -120,6 +120,26 @@ class JobControllerTest {
         mockMvc.perform(get(QUEUED_JOBS_PATH))
                 .andExpect(status().isOk())
                 .andExpect(content().string(objectMapper.writeValueAsString(queuedJobIds)));
+
+        verify(jobProducer, times(1)).getQueuedJobsIds();
+    }
+
+    @Test
+    void removeJobFromQueue() throws Exception {
+        // WHEN / THEN
+        mockMvc.perform(delete(QUEUED_JOB_PATH, JOB_ID))
+                .andExpect(status().isOk());
+
+        verify(jobProducer, times(1)).removeJobFromQueue(JOB_ID);
+    }
+
+    @Test
+    void clearJobQueue() throws Exception {
+        // WHEN / THEN
+        mockMvc.perform(delete(QUEUED_JOBS_PATH))
+                .andExpect(status().isOk());
+
+        verify(jobProducer, times(1)).clearJobQueue();
     }
 
     private JobDto initJobDto() {

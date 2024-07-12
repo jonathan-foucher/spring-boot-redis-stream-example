@@ -5,6 +5,8 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import com.jonathanfoucher.redisstreamexample.data.JobDto;
 import com.jonathanfoucher.redisstreamexample.errors.JobAlreadyQueuedException;
+import com.jonathanfoucher.redisstreamexample.errors.JobNotFoundInQueueException;
+import com.jonathanfoucher.redisstreamexample.errors.RemovingRunningJobException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -24,6 +26,7 @@ import java.util.List;
 
 import static ch.qos.logback.classic.Level.ERROR;
 import static ch.qos.logback.classic.Level.INFO;
+import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -41,7 +44,7 @@ class JobProducerTest {
     private static final String STREAM_NAME_VAR = "streamKey";
     private static final Long JOB_ID = 15L;
     private static final String JOB_NAME = "some job name";
-    private static final String RECORD_ID = Instant.now().toEpochMilli() + "-0";
+    private static final String RECORD_ID = Instant.now().minusSeconds(600).toEpochMilli() + "-0";
 
     @BeforeEach
     void beforeEach() {
@@ -223,6 +226,164 @@ class JobProducerTest {
         assertEquals(JOB_ID, results.get(0));
         assertEquals(jobId2, results.get(1));
         assertEquals(jobId3, results.get(2));
+    }
+
+    @Test
+    void removeJobFromQueue() {
+        // GIVEN
+        JobDto job = initJobDto();
+        ObjectRecord<String, JobDto> jobRecord = ObjectRecord.create(STREAM_NAME, job)
+                .withId(RecordId.of(RECORD_ID));
+
+        JobDto job2 = new JobDto();
+        Long jobId2 = JOB_ID + 10;
+        job2.setId(jobId2);
+        job2.setName("some other job");
+        ObjectRecord<String, JobDto> jobRecord2 = ObjectRecord.create(STREAM_NAME, job2)
+                .withId(RecordId.of(Instant.now().minusSeconds(630).toEpochMilli() + "-0"));
+
+        JobDto job3 = new JobDto();
+        Long jobId3 = JOB_ID - 3;
+        job3.setId(jobId3);
+        job3.setName("some third job");
+        ObjectRecord<String, JobDto> jobRecord3 = ObjectRecord.create(STREAM_NAME, job3)
+                .withId(RecordId.of(Instant.now().minusSeconds(570).toEpochMilli() + "-0"));
+
+        when(redisTemplate.opsForStream())
+                .thenReturn(streamOperations);
+        when(streamOperations.read(JobDto.class, StreamOffset.fromStart(STREAM_NAME)))
+                .thenReturn(List.of(jobRecord2, jobRecord, jobRecord3));
+
+        // WHEN
+        jobProducer.removeJobFromQueue(JOB_ID);
+
+        // THEN
+        ArgumentCaptor<ObjectRecord<String, JobDto>> capturedRecord = ArgumentCaptor.forClass(ObjectRecord.class);
+        verify(redisTemplate, times(2))
+                .opsForStream();
+        verify(streamOperations, times(1))
+                .read(JobDto.class, StreamOffset.fromStart(STREAM_NAME));
+        verify(streamOperations, times(1))
+                .delete(capturedRecord.capture());
+
+        ObjectRecord<String, JobDto> recordResult = capturedRecord.getValue();
+        assertNotNull(recordResult);
+
+        JobDto result = recordResult.getValue();
+        assertNotNull(result);
+        assertEquals(JOB_ID, result.getId());
+        assertEquals(JOB_NAME, result.getName());
+    }
+
+    @Test
+    void removeJobFromQueueWithEmptyQueue() {
+        // GIVEN
+        when(redisTemplate.opsForStream())
+                .thenReturn(streamOperations);
+        when(streamOperations.read(JobDto.class, StreamOffset.fromStart(STREAM_NAME)))
+                .thenReturn(emptyList());
+
+        // WHEN / THEN
+        assertThatThrownBy(() -> jobProducer.removeJobFromQueue(JOB_ID))
+                .isInstanceOf(JobNotFoundInQueueException.class)
+                .hasMessage("job with id " + JOB_ID + " is not queued");
+
+        verify(redisTemplate, times(1))
+                .opsForStream();
+        verify(streamOperations, times(1))
+                .read(JobDto.class, StreamOffset.fromStart(STREAM_NAME));
+        verify(streamOperations, never())
+                .delete(any());
+    }
+
+    @Test
+    void removeRunningJobFromQueue() {
+        // GIVEN
+        JobDto job = initJobDto();
+        ObjectRecord<String, JobDto> jobRecord = ObjectRecord.create(STREAM_NAME, job)
+                .withId(RecordId.of(RECORD_ID));
+
+        JobDto job2 = new JobDto();
+        Long jobId2 = JOB_ID + 10;
+        job2.setId(jobId2);
+        job2.setName("some other job");
+        ObjectRecord<String, JobDto> jobRecord2 = ObjectRecord.create(STREAM_NAME, job2)
+                .withId(RecordId.of(Instant.now().minusSeconds(570).toEpochMilli() + "-0"));
+
+        JobDto job3 = new JobDto();
+        Long jobId3 = JOB_ID - 3;
+        job3.setId(jobId3);
+        job3.setName("some third job");
+        ObjectRecord<String, JobDto> jobRecord3 = ObjectRecord.create(STREAM_NAME, job3)
+                .withId(RecordId.of(Instant.now().minusSeconds(540).toEpochMilli() + "-0"));
+
+        when(redisTemplate.opsForStream())
+                .thenReturn(streamOperations);
+        when(streamOperations.read(JobDto.class, StreamOffset.fromStart(STREAM_NAME)))
+                .thenReturn(List.of(jobRecord, jobRecord2, jobRecord3));
+
+        // WHEN / THEN
+        assertThatThrownBy(() -> jobProducer.removeJobFromQueue(JOB_ID))
+                .isInstanceOf(RemovingRunningJobException.class)
+                .hasMessage("job with id " + JOB_ID + " is running and can't be removed from the queue");
+
+        verify(redisTemplate, times(1))
+                .opsForStream();
+        verify(streamOperations, times(1))
+                .read(JobDto.class, StreamOffset.fromStart(STREAM_NAME));
+        verify(streamOperations, never())
+                .delete(any());
+    }
+
+    @Test
+    void removeJobFromQueueWithJobAbsent() {
+        // GIVEN
+        JobDto job2 = new JobDto();
+        Long jobId2 = JOB_ID + 10;
+        job2.setId(jobId2);
+        job2.setName("some other job");
+        ObjectRecord<String, JobDto> jobRecord2 = ObjectRecord.create(STREAM_NAME, job2)
+                .withId(RecordId.of(Instant.now().minusSeconds(570).toEpochMilli() + "-0"));
+
+        JobDto job3 = new JobDto();
+        Long jobId3 = JOB_ID - 3;
+        job3.setId(jobId3);
+        job3.setName("some third job");
+        ObjectRecord<String, JobDto> jobRecord3 = ObjectRecord.create(STREAM_NAME, job3)
+                .withId(RecordId.of(Instant.now().minusSeconds(540).toEpochMilli() + "-0"));
+
+        when(redisTemplate.opsForStream())
+                .thenReturn(streamOperations);
+        when(streamOperations.read(JobDto.class, StreamOffset.fromStart(STREAM_NAME)))
+                .thenReturn(List.of(jobRecord2, jobRecord3));
+
+        // WHEN / THEN
+        assertThatThrownBy(() -> jobProducer.removeJobFromQueue(JOB_ID))
+                .isInstanceOf(JobNotFoundInQueueException.class)
+                .hasMessage("job with id " + JOB_ID + " is not queued");
+
+        verify(redisTemplate, times(1))
+                .opsForStream();
+        verify(streamOperations, times(1))
+                .read(JobDto.class, StreamOffset.fromStart(STREAM_NAME));
+        verify(streamOperations, never())
+                .delete(any());
+    }
+
+    @Test
+    void clearJobQueue() {
+        // GIVEN
+        when(redisTemplate.opsForStream())
+                .thenReturn(streamOperations);
+
+        // WHEN
+        jobProducer.clearJobQueue();
+
+        // THEN
+        verify(redisTemplate, times(1))
+                .opsForStream();
+        verify(streamOperations, times(1))
+                .trim(STREAM_NAME, 0);
     }
 
     private JobDto initJobDto() {

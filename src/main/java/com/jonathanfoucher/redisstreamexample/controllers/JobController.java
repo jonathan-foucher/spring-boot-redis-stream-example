@@ -22,4 +22,14 @@ public class JobController {
     public List<Long> getQueuedJobIds() {
         return jobProducer.getQueuedJobsIds();
     }
+
+    @DeleteMapping("/{job_id}/queued")
+    public void removeJobFromQueue(@PathVariable("job_id") Long jobId) {
+        jobProducer.removeJobFromQueue(jobId);
+    }
+
+    @DeleteMapping("/queued")
+    public void clearJobQueue() {
+        jobProducer.clearJobQueue();
+    }
 }
