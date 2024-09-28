@@ -6,12 +6,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ControllerAdvice
 public class GlobalControllerExceptionHandler {
     @ExceptionHandler({JobAlreadyQueuedException.class, RemovingRunningJobException.class, JobAlreadyQueuedException.class})
-    @ResponseStatus(HttpStatus.CONFLICT)
     public ResponseEntity<String> handleConflict(Exception exception) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(exception.getMessage());
