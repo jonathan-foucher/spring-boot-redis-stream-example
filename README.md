@@ -1,4 +1,4 @@
-### introduction
+## Introduction
 This project is an example of Redis stream implementation with Spring Boot.
 
 The objective is to create a queue for jobs to be processed one by one in the produced order.
@@ -8,7 +8,7 @@ The app should also be able to return what jobs are currently queued and not all
 An endpoint allows to post a job in the queue and the consumer will automatically process it.
 The producer and consumer are both set on the same project on this example.
 
-### run the project
+## Run the project
 You will need to launch a Redis instance on your computer before running the project.
 
 You can either install Redis directly on your machine or run it through Docker :
