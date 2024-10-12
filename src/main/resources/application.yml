@@ -4,8 +4,6 @@ server:
     context-path: /redis-stream-example
 
 spring:
-  application:
-    name: redis-stream-example
   jackson:
     property-naming-strategy: com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy
   data:

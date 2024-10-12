@@ -2,8 +2,7 @@ package com.jonathanfoucher.redisstreamexample.services;
 
 import com.jonathanfoucher.redisstreamexample.data.JobDto;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.stream.ObjectRecord;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.stream.StreamListener;
@@ -13,9 +12,9 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class JobConsumer implements StreamListener<String, ObjectRecord<String, JobDto>> {
     private final RedisTemplate<String, String> redisTemplate;
-    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     @Override
     public void onMessage(ObjectRecord<String, JobDto> jobRecord) {

@@ -5,8 +5,7 @@ import com.jonathanfoucher.redisstreamexample.errors.JobAlreadyQueuedException;
 import com.jonathanfoucher.redisstreamexample.errors.JobNotFoundInQueueException;
 import com.jonathanfoucher.redisstreamexample.errors.RemovingRunningJobException;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.connection.stream.Record;
 import org.springframework.data.redis.connection.stream.*;
@@ -19,10 +18,9 @@ import static java.util.Objects.isNull;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class JobProducer {
     private final RedisTemplate<String, String> redisTemplate;
-
-    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     @Value("${redis-stream-example.stream-key}")
     private String streamKey;
