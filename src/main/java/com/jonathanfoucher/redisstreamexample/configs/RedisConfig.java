@@ -17,6 +17,7 @@ import java.time.Duration;
 public class RedisConfig {
     @Value("${redis-stream-example.stream-key}")
     private String streamKey;
+    private Subscription subscription;
 
     @Bean
     public Subscription subscription(RedisConnectionFactory connectionFactory, StreamListener<String, ObjectRecord<String, JobDto>> streamListener) {
@@ -31,12 +32,16 @@ public class RedisConfig {
         StreamMessageListenerContainer<String, ObjectRecord<String, JobDto>> container = StreamMessageListenerContainer
                 .create(connectionFactory, options);
 
-        Subscription subscription = container.receive(
+        subscription = container.receive(
                 StreamOffset.fromStart(streamKey),
                 streamListener
         );
 
         container.start();
         return subscription;
+    }
+
+    public boolean isSubscriptionActive() {
+        return subscription != null && subscription.isActive();
     }
 }

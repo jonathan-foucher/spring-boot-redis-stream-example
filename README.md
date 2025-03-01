@@ -27,3 +27,10 @@ There is also an endpoint to retrieve all queued jobs ids:
 curl --request GET \
   --url http://localhost:8080/redis-stream-example/v1/jobs/queued
 ```
+
+A custom health checker was added to check if the stream subscription is still active
+It might be inactive when connection to redis is lost and won't recover the subscription
+```
+curl --request GET \
+  --url http://localhost:8080/redis-stream-example/actuator/health
+```

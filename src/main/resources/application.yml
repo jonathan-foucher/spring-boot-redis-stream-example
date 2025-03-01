@@ -13,3 +13,17 @@ spring:
 
 redis-stream-example:
   stream-key: job_queue
+
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: always
+      group:
+        liveness:
+          - redis
+          - redisStream
+        readiness:
+          - redis
+          - redisStream
