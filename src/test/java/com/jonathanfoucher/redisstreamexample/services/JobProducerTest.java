@@ -12,12 +12,12 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.redis.connection.stream.ObjectRecord;
 import org.springframework.data.redis.connection.stream.RecordId;
 import org.springframework.data.redis.connection.stream.StreamOffset;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StreamOperations;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -35,9 +35,9 @@ import static org.mockito.Mockito.*;
 class JobProducerTest {
     @Autowired
     private JobProducer jobProducer;
-    @MockBean
+    @MockitoBean
     private RedisTemplate<String, String> redisTemplate;
-    @MockBean
+    @MockitoBean
     private StreamOperations<String, Object, Object> streamOperations;
 
     private static final String STREAM_NAME = "job_queue";

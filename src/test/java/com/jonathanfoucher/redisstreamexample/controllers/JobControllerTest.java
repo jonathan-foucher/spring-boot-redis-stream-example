@@ -9,8 +9,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -36,7 +36,7 @@ class JobControllerTest {
     private JobController jobController;
     @Autowired
     private GlobalControllerExceptionHandler globalControllerExceptionHandler;
-    @MockBean
+    @MockitoBean
     private JobProducer jobProducer;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
