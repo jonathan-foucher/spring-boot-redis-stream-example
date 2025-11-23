@@ -1,5 +1,5 @@
 ## Introduction
-This project is an example of Redis stream implementation with Spring Boot.
+This project is an example of Redis / Valkey stream implementation with Spring Boot.
 
 The objective is to create a queue for jobs to be processed one by one in the produced order.
 If the app restart, it must process the job that was currently active and continue.
@@ -9,12 +9,15 @@ An endpoint allows to post a job in the queue and the consumer will automaticall
 The producer and consumer are both set on the same project on this example.
 
 ## Run the project
-You will need to launch a Redis instance on your computer before running the project.
+Valkey is a free open-source project forked from Redis.
+If you prefer, you can choose to run Redis instead.
 
-You can either install Redis directly on your machine or run it through Docker :
-`docker run -p 6379:6379 redis`
+You will need to launch a Valkey instance on your computer before running the project.
 
-Once Redis is launched, you can start the Spring Boot project and start posting HTTP requests on the endpoint:
+You can either install Valkey directly on your machine or run it through Docker :
+`docker run -p 6379:6379 valkey/valkey`
+
+Once Valkey is launched, you can start the Spring Boot project and start posting HTTP requests on the endpoint:
 ```
 curl --request POST \
   --url http://localhost:8080/redis-stream-example/v1/jobs/start \
@@ -29,7 +32,7 @@ curl --request GET \
 ```
 
 A custom health checker was added to check if the stream subscription is still active
-It might be inactive when connection to redis is lost and won't recover the subscription
+It might be inactive when connection to valkey is lost and won't recover the subscription
 ```
 curl --request GET \
   --url http://localhost:8080/redis-stream-example/actuator/health
